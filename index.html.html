@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SafeDrive">
+<meta name="theme-color" content="#1a3a5c">
+<title>SafeDrive Academy</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --p:#1a3a5c;--pl:#2d5a8e;--acc:#f97316;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;
+  --bg:#f0f4f8;--card:#fff;--txt:#1a2332;--muted:#64748b;--border:#e2e8f0;
+  --r:16px;--sh:0 4px 20px rgba(0,0,0,.08);--sh2:0 8px 40px rgba(0,0,0,.14);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden;}
+#app{max-width:480px;margin:0 auto;min-height:100vh;position:relative;background:var(--bg);}
+
+/* SCREENS */
+.screen{display:none;min-height:100vh;padding-bottom:90px;animation:fadeIn .25s ease;}
+.screen.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* HEADER */
+.top-bar{background:var(--p);color:#fff;padding:16px 20px 14px;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:12px;}
+.top-bar h1{font-size:18px;font-weight:700;flex:1;}
+.top-bar .back{background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;}
+.top-bar .badge{background:var(--acc);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid var(--border);display:flex;z-index:200;padding-bottom:env(safe-area-inset-bottom,0);}
+.nav-btn{flex:1;padding:10px 4px 8px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:var(--muted);transition:color .2s;}
+.nav-btn.active{color:var(--p);}
+.nav-btn .ico{font-size:22px;}
+.nav-btn span{font-weight:600;}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,var(--p) 0%,var(--pl) 100%);color:#fff;padding:28px 20px 32px;position:relative;overflow:hidden;}
+.hero::after{content:'🚗';position:absolute;right:-10px;bottom:-10px;font-size:100px;opacity:.08;}
+.hero h2{font-size:24px;font-weight:800;line-height:1.2;margin-bottom:8px;}
+.hero p{font-size:14px;opacity:.85;line-height:1.5;}
+.hero-stats{display:flex;gap:16px;margin-top:20px;}
+.hero-stat{background:rgba(255,255,255,.15);border-radius:12px;padding:10px 14px;text-align:center;flex:1;}
+.hero-stat .val{font-size:22px;font-weight:800;}
+.hero-stat .lbl{font-size:10px;opacity:.8;margin-top:2px;}
+
+/* PROGRESS BAR */
+.prog-bar{height:6px;background:rgba(255,255,255,.2);border-radius:3px;margin-top:16px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--acc);border-radius:3px;transition:width .5s ease;}
+
+/* SECTION */
+.section{padding:20px 16px 4px;}
+.section-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;}
+
+/* MODULE CARDS */
+.module-card{background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--sh);display:flex;gap:14px;align-items:flex-start;cursor:pointer;transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden;}
+.module-card:active{transform:scale(.98);}
+.module-card.locked{opacity:.55;cursor:not-allowed;}
+.module-card.completed::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--ok);}
+.module-card.active-mod::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--acc);}
+.mod-icon{font-size:32px;min-width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:var(--bg);border-radius:12px;}
+.mod-info{flex:1;}
+.mod-num{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.mod-title{font-size:15px;font-weight:700;color:var(--txt);margin:2px 0 4px;}
+.mod-sub{font-size:12px;color:var(--muted);line-height:1.4;}
+.mod-meta{display:flex;gap:8px;margin-top:6px;align-items:center;}
+.tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--bg);color:var(--muted);}
+.tag.ok{background:#d1fae5;color:#065f46;}
+.tag.warn{background:#fef3c7;color:#92400e;}
+.tag.lock{background:#f1f5f9;color:#94a3b8;}
+.mod-arrow{font-size:18px;color:var(--muted);align-self:center;}
+
+/* MODULE DETAIL */
+.mod-hero{background:linear-gradient(135deg,var(--p),var(--pl));color:#fff;padding:24px 20px 28px;text-align:center;}
+.mod-hero .big-icon{font-size:56px;margin-bottom:12px;}
+.mod-hero h2{font-size:21px;font-weight:800;}
+.mod-hero p{font-size:13px;opacity:.8;margin-top:6px;line-height:1.5;}
+.mod-hero .pills{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
+.pill{background:rgba(255,255,255,.2);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;}
+
+/* TABS */
+.tabs{display:flex;background:#fff;border-bottom:2px solid var(--border);position:sticky;top:56px;z-index:50;}
+.tab-btn{flex:1;padding:12px 4px;border:none;background:none;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;}
+.tab-btn.active{color:var(--p);border-bottom-color:var(--p);}
+
+/* CONTENT ITEMS */
+.content-item{background:var(--card);border-radius:var(--r);margin:8px 12px;box-shadow:var(--sh);overflow:hidden;cursor:pointer;transition:transform .15s;}
+.content-item:active{transform:scale(.98);}
+.ci-header{padding:14px 16px;display:flex;align-items:center;gap:12px;}
+.ci-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.ci-icon.type-concept{background:#dbeafe;}
+.ci-icon.type-video{background:#fce7f3;}
+.ci-icon.type-infographic{background:#d1fae5;}
+.ci-icon.type-case_study{background:#fef3c7;}
+.ci-icon.type-quiz{background:#ede9fe;}
+.ci-title{font-size:14px;font-weight:700;flex:1;}
+.ci-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.ci-status{font-size:18px;}
+
+/* LESSON SCREEN */
+.lesson-body{padding:16px;}
+.lesson-card{background:var(--card);border-radius:var(--r);padding:20px;margin-bottom:14px;box-shadow:var(--sh);}
+.lesson-card h3{font-size:17px;font-weight:800;color:var(--p);margin-bottom:12px;line-height:1.3;}
+.lesson-card p{font-size:14px;line-height:1.7;color:var(--txt);margin-bottom:10px;}
+.lesson-card ul{padding-left:0;list-style:none;}
+.lesson-card li{padding:8px 0;padding-left:24px;position:relative;font-size:14px;line-height:1.5;border-bottom:1px solid var(--border);}
+.lesson-card li:last-child{border:none;}
+.lesson-card li::before{content:'→';position:absolute;left:0;color:var(--acc);font-weight:700;}
+
+/* KEY POINTS BOX */
+.kp-box{background:linear-gradient(135deg,#dbeafe,#ede9fe);border-radius:12px;padding:16px;margin-top:12px;}
+.kp-box h4{font-size:12px;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+.kp-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.kp-item{background:#fff;border-radius:8px;padding:10px;text-align:center;font-size:12px;font-weight:600;color:var(--p);}
+
+/* VIDEO PLACEHOLDER */
+.video-wrap{background:#000;border-radius:12px;overflow:hidden;aspect-ratio:16/9;position:relative;margin-bottom:12px;}
+.video-wrap iframe{width:100%;height:100%;border:none;}
+.video-placeholder{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;gap:10px;cursor:pointer;text-decoration:none;}
+.video-placeholder .play-btn{width:64px;height:64px;background:rgba(249,115,22,.9);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;}
+.video-placeholder span{font-size:13px;opacity:.8;text-align:center;padding:0 20px;}
+
+/* INFOGRAPHIC */
+.infographic{background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border-radius:12px;padding:16px;}
+.info-title{font-size:14px;font-weight:700;color:var(--p);margin-bottom:14px;text-align:center;}
+.info-steps{display:flex;flex-direction:column;gap:0;}
+.info-step{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid rgba(148,163,184,.2);}
+.info-step:last-child{border:none;}
+.step-num{width:32px;height:32px;background:var(--p);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;}
+.step-body{flex:1;}
+.step-title{font-size:13px;font-weight:700;color:var(--p);}
+.step-desc{font-size:12px;color:var(--muted);line-height:1.4;margin-top:2px;}
+
+/* STAT TABLE */
+.stat-table{width:100%;border-collapse:collapse;font-size:13px;}
+.stat-table th{background:var(--p);color:#fff;padding:8px 10px;text-align:left;}
+.stat-table td{padding:8px 10px;border-bottom:1px solid var(--border);}
+.stat-table tr:nth-child(even) td{background:#f8fafc;}
+
+/* CASE STUDY */
+.case-scenario{background:#fffbeb;border-left:4px solid var(--warn);border-radius:0 12px 12px 0;padding:14px;margin-bottom:14px;}
+.case-scenario .cs-label{font-size:10px;font-weight:700;color:var(--warn);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.case-scenario p{font-size:13px;line-height:1.6;}
+.case-q{font-size:15px;font-weight:700;margin:14px 0 12px;}
+.case-option{border:2px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;font-size:13px;line-height:1.4;transition:all .2s;}
+.case-option:hover{border-color:var(--pl);background:#f0f9ff;}
+.case-option.correct{border-color:var(--ok);background:#d1fae5;color:#065f46;}
+.case-option.wrong{border-color:var(--err);background:#fee2e2;color:#991b1b;}
+.case-option.disabled{cursor:default;}
+.case-explain{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px;margin-top:12px;font-size:13px;line-height:1.6;color:#166534;}
+.case-explain strong{display:block;margin-bottom:4px;font-size:14px;}
+
+/* QUIZ */
+.quiz-header{background:var(--p);color:#fff;padding:20px;text-align:center;}
+.quiz-header .q-count{font-size:12px;opacity:.7;margin-bottom:4px;}
+.quiz-header .q-title{font-size:16px;font-weight:700;}
+.quiz-progress{height:4px;background:rgba(255,255,255,.2);}
+.quiz-progress-fill{height:100%;background:var(--acc);transition:width .3s;}
+.quiz-body{padding:20px 16px;}
+.quiz-question{font-size:16px;font-weight:700;line-height:1.4;margin-bottom:20px;color:var(--p);}
+.quiz-option{border:2px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;font-size:14px;line-height:1.4;display:flex;align-items:center;gap:10px;transition:all .2s;}
+.quiz-option:hover{border-color:var(--pl);background:#f0f9ff;}
+.quiz-option.selected{border-color:var(--pl);background:#dbeafe;}
+.quiz-option.correct{border-color:var(--ok);background:#d1fae5;}
+.quiz-option.wrong{border-color:var(--err);background:#fee2e2;}
+.quiz-option .opt-letter{width:28px;height:28px;border-radius:50%;background:var(--bg);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.quiz-option.correct .opt-letter{background:var(--ok);color:#fff;}
+.quiz-option.wrong .opt-letter{background:var(--err);color:#fff;}
+.quiz-explain{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px;margin-top:14px;font-size:13px;line-height:1.6;color:#166534;display:none;}
+.quiz-explain.show{display:block;}
+.next-btn{width:100%;padding:16px;background:var(--p);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:16px;transition:opacity .2s;}
+.next-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* RESULT SCREEN */
+.result-hero{background:linear-gradient(135deg,var(--p),var(--pl));padding:40px 20px;text-align:center;color:#fff;}
+.result-score{font-size:72px;font-weight:800;line-height:1;}
+.result-label{font-size:16px;opacity:.8;margin-top:4px;}
+.result-emoji{font-size:48px;margin-top:16px;}
+.result-body{padding:20px;}
+.result-card{background:var(--card);border-radius:var(--r);padding:20px;margin-bottom:12px;box-shadow:var(--sh);}
+.result-card h3{font-size:16px;font-weight:700;color:var(--p);margin-bottom:12px;}
+.result-answers{display:flex;flex-direction:column;gap:8px;}
+.ra-item{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.4;}
+.ra-item .ra-ico{font-size:16px;flex-shrink:0;margin-top:1px;}
+
+/* CERTIFICATE */
+.cert-wrap{padding:20px;}
+.cert{background:linear-gradient(135deg,#fffef0,#fff9e6);border:3px solid #d97706;border-radius:20px;padding:28px 20px;text-align:center;box-shadow:var(--sh2);}
+.cert-logo{font-size:48px;margin-bottom:12px;}
+.cert-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;}
+.cert-name{font-size:26px;font-weight:800;color:var(--p);margin-bottom:6px;}
+.cert-text{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px;}
+.cert-score{font-size:40px;font-weight:800;color:var(--acc);}
+.cert-sub{font-size:12px;color:var(--muted);}
+.cert-date{margin-top:16px;font-size:11px;color:var(--muted);}
+.cert-badge{display:inline-block;background:linear-gradient(135deg,var(--acc),#ea580c);color:#fff;padding:8px 20px;border-radius:20px;font-weight:700;font-size:12px;margin-top:14px;text-transform:uppercase;letter-spacing:.5px;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 24px;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;}
+.btn-primary{background:var(--p);color:#fff;}
+.btn-accent{background:var(--acc);color:#fff;}
+.btn-outline{background:transparent;color:var(--p);border:2px solid var(--p);}
+.btn-full{width:100%;}
+.btn:active{transform:scale(.97);}
+
+/* PROGRESS SCREEN */
+.prog-module{background:var(--card);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;box-shadow:var(--sh);display:flex;gap:12px;align-items:center;}
+.prog-module .pm-icon{font-size:24px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:var(--bg);border-radius:10px;}
+.prog-module .pm-info{flex:1;}
+.prog-module .pm-title{font-size:13px;font-weight:700;}
+.prog-module .pm-bar{height:4px;background:var(--bg);border-radius:2px;margin-top:5px;overflow:hidden;}
+.prog-module .pm-fill{height:100%;background:var(--ok);border-radius:2px;transition:width .5s;}
+.prog-module .pm-pct{font-size:12px;font-weight:700;color:var(--ok);}
+
+/* TOAST */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a2332;color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:999;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* COMPLETE LESSON BTN */
+.complete-btn-wrap{padding:0 16px 20px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="showScreen('home')" id="nav-home">
+    <span class="ico">🏠</span><span>Accueil</span>
+  </button>
+  <button class="nav-btn" onclick="showScreen('progress')" id="nav-progress">
+    <span class="ico">📊</span><span>Progression</span>
+  </button>
+  <button class="nav-btn" onclick="showScreen('certificate')" id="nav-cert">
+    <span class="ico">🏆</span><span>Certificat</span>
+  </button>
+</nav>
+
+<!-- HOME SCREEN -->
+<div class="screen active" id="screen-home">
+  <div class="hero">
+    <h2>SafeDrive Academy 🛡️</h2>
+    <p>Maîtrisez la conduite défensive et devenez un conducteur exemplaire</p>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="val" id="stat-modules">0/8</div><div class="lbl">Modules</div></div>
+      <div class="hero-stat"><div class="val" id="stat-score">0%</div><div class="lbl">Score moy.</div></div>
+      <div class="hero-stat"><div class="val" id="stat-time">~3h</div><div class="lbl">Durée</div></div>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="hero-prog" style="width:0%"></div></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Parcours de formation</div>
+    <div id="module-list"></div>
+  </div>
+</div>
+
+<!-- PROGRESS SCREEN -->
+<div class="screen" id="screen-progress">
+  <div class="top-bar"><h1>📊 Ma Progression</h1></div>
+  <div class="section">
+    <div class="section-title">Avancement par module</div>
+    <div id="progress-list"></div>
+  </div>
+</div>
+
+<!-- CERTIFICATE SCREEN -->
+<div class="screen" id="screen-certificate">
+  <div class="top-bar"><h1>🏆 Certificat</h1></div>
+  <div id="cert-body"></div>
+</div>
+
+<!-- MODULE DETAIL SCREEN -->
+<div class="screen" id="screen-module">
+  <div class="top-bar">
+    <button class="back" onclick="showScreen('home')">←</button>
+    <h1 id="mod-top-title">Module</h1>
+  </div>
+  <div class="mod-hero">
+    <div class="big-icon" id="mod-big-icon"></div>
+    <h2 id="mod-hero-title"></h2>
+    <p id="mod-hero-desc"></p>
+    <div class="pills">
+      <span class="pill" id="mod-pill-duration"></span>
+      <span class="pill" id="mod-pill-items"></span>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('cours',this)">📖 Cours</button>
+    <button class="tab-btn" onclick="switchTab('activites',this)">🎯 Activités</button>
+    <button class="tab-btn" onclick="switchTab('quiz',this)">✏️ Quiz</button>
+  </div>
+  <div id="tab-cours"></div>
+  <div id="tab-activites" style="display:none"></div>
+  <div id="tab-quiz" style="display:none"></div>
+</div>
+
+<!-- LESSON SCREEN -->
+<div class="screen" id="screen-lesson">
+  <div class="top-bar">
+    <button class="back" id="lesson-back">←</button>
+    <h1 id="lesson-title">Leçon</h1>
+  </div>
+  <div class="lesson-body" id="lesson-body"></div>
+  <div class="complete-btn-wrap">
+    <button class="btn btn-primary btn-full" id="lesson-complete-btn" onclick="completeLesson()">✅ Marquer comme terminé</button>
+  </div>
+</div>
+
+<!-- QUIZ SCREEN -->
+<div class="screen" id="screen-quiz">
+  <div class="top-bar">
+    <button class="back" onclick="exitQuiz()">←</button>
+    <h1 id="quiz-mod-title">Quiz</h1>
+  </div>
+  <div class="quiz-header">
+    <div class="q-count" id="q-count">Question 1/5</div>
+    <div class="q-title" id="q-title"></div>
+  </div>
+  <div class="quiz-progress"><div class="quiz-progress-fill" id="quiz-prog-fill" style="width:0%"></div></div>
+  <div class="quiz-body">
+    <div class="quiz-question" id="quiz-question"></div>
+    <div id="quiz-options"></div>
+    <div class="quiz-explain" id="quiz-explain"></div>
+    <button class="next-btn" id="next-btn" onclick="nextQuestion()" disabled>Suivant →</button>
+  </div>
+</div>
+
+<!-- RESULT SCREEN -->
+<div class="screen" id="screen-result">
+  <div class="result-hero">
+    <div class="result-emoji" id="result-emoji"></div>
+    <div class="result-score" id="result-score"></div>
+    <div class="result-label">Score obtenu</div>
+  </div>
+  <div class="result-body">
+    <div class="result-card">
+      <h3>🎯 Récapitulatif</h3>
+      <div class="result-answers" id="result-answers"></div>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="finishQuiz()" style="margin-bottom:8px">Retour au module</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+</div><!-- end #app -->
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────
+const MODULES = [
+{
+  id:1, icon:'🛡️', title:'Principes Fondamentaux', sub:'Introduction à la conduite défensive', duration:'20 min',
+  cours:[
+    {type:'concept', icon:'📘', title:'Qu\'est-ce que la conduite défensive?', time:'7 min', content:{
+      intro:`La conduite défensive est une approche de conduite qui va au-delà du simple respect du code de la route. Elle consiste à anticiper les dangers potentiels, à adopter un comportement préventif et à prendre des décisions éclairées pour éviter les accidents — même ceux qui seraient causés par les autres.`,
+      text:`Chaque année, des millions d'accidents de la route sont évitables. La grande majorité des accidents résultent d'une erreur humaine : inattention, excès de vitesse, mauvaise lecture de l'environnement. La conduite défensive vous donne les outils pour briser ce cycle.`,
+      keyPoints:['Anticiper les dangers','Maintenir un espace de sécurité','Rester vigilant à 360°','Prendre des décisions éclairées'],
+      extra:`Un conducteur défensif considère qu'il est responsable de sa propre sécurité ET de celle des autres usagers. Il ne fait pas confiance aveuglément aux autres conducteurs et s'adapte en permanence à l'environnement.`
+    }},
+    {type:'infographic', icon:'📊', title:'La méthode SIPDE', time:'5 min', content:{
+      title:'La Méthode SIPDE — Votre routine de sécurité',
+      desc:'Appliquer SIPDE à chaque situation de conduite transforme votre manière de conduire.',
+      steps:[
+        {num:'S', title:'Scruter', desc:'Observer loin devant, sur les côtés et derrière. Balayez la route à 12-15 secondes devant vous.'},
+        {num:'I', title:'Identifier', desc:'Repérer les dangers potentiels : piétons, animaux, véhicules en retrait, signalisation.'},
+        {num:'P', title:'Prévoir', desc:'Anticiper ce qui pourrait arriver. "Et si ce piéton traversait ?" "Et si ce véhicule freinait brusquement ?"'},
+        {num:'D', title:'Décider', desc:'Choisir la meilleure action : ralentir, changer de voie, augmenter la distance, s\'arrêter.'},
+        {num:'E', title:'Exécuter', desc:'Agir de façon fluide, contrôlée et prévisible pour les autres usagers.'}
+      ]
+    }}
+  ],
+  activites:[
+    {type:'case_study', icon:'🔍', title:'Cas pratique : Le freinage d\'urgence en ville', time:'8 min', content:{
+      scenario:`Il est 18h, heure de pointe à Douala. Vous roulez à 45 km/h sur l'avenue principale. Le véhicule devant vous roule à 40 km/h. La distance qui vous sépare est d'environ 10 mètres. Soudain, un enfant surgit entre deux voitures garées sur le côté droit.`,
+      question:'Quelle est la meilleure réaction à adopter dans cette situation ?',
+      options:[
+        'Klaxonner fort et freiner au maximum.',
+        'Anticiper ce type de situation en maintenant une plus grande distance et en réduisant la vitesse dans les zones à risque.',
+        'Déporter le véhicule sur la voie gauche pour éviter l\'enfant.',
+        'Continuer à la même vitesse car c\'est aux piétons de faire attention.'
+      ],
+      correct:1,
+      explanation:'La bonne pratique est l\'anticipation. En zone urbaine dense, notamment à l\'heure de pointe, un conducteur défensif réduit sa vitesse (30-40 km/h) et maintient une distance de sécurité de 3 secondes. Cela lui donne le temps et l\'espace pour réagir sereinement à tout imprévu.'
+    }}
+  ],
+  quiz:[
+    {q:'Qu\'est-ce que la conduite défensive ?', opts:['Conduire toujours lentement','Anticiper les dangers et adopter un comportement préventif','Éviter de conduire la nuit','Respecter uniquement les feux rouges'], ans:1, exp:'La conduite défensive consiste à anticiper et à réagir de façon proactive pour éviter les accidents.'},
+    {q:'La méthode SIPDE signifie :', opts:['Surveiller, Inspecter, Piloter, Dépasser, Éviter','Scruter, Identifier, Prévoir, Décider, Exécuter','Signaler, Indiquer, Percevoir, Dévier, Évaluer','Sécuriser, Informer, Prévenir, Diriger, Esquiver'], ans:1, exp:'SIPDE est une méthode en 5 étapes pour gérer les situations de conduite de façon structurée.'},
+    {q:'Quelle est la première cause d\'accidents routiers dans le monde ?', opts:['Défaillances mécaniques','Météo défavorable','Erreur humaine','État dégradé des routes'], ans:2, exp:'Plus de 90% des accidents sont liés à une erreur humaine : inattention, vitesse, alcool, fatigue.'},
+    {q:'Un conducteur défensif doit principalement :', opts:['Conduire plus vite que les autres','Faire confiance aux autres conducteurs','Maintenir un espace de sécurité et anticiper les dangers','Éviter les nationales et autoroutes'], ans:2, exp:'L\'anticipation et l\'espace de sécurité sont les deux piliers de la conduite défensive.'},
+    {q:'La conduite défensive vous protège contre :', opts:['Uniquement vos propres erreurs','Les pannes mécaniques','Les erreurs des autres conducteurs ET les vôtres','Uniquement la météo'], ans:2, exp:'La conduite défensive vous prépare à réagir aux erreurs de tous les usagers, y compris les vôtres.'}
+  ]
+},
+{
+  id:2, icon:'📏', title:'Distances & Vitesse', sub:'Gestion des distances de sécurité', duration:'22 min',
+  cours:[
+    {type:'concept', icon:'📘', title:'La règle des 3 secondes', time:'8 min', content:{
+      intro:`La distance de sécurité est l'espace minimum à maintenir entre votre véhicule et le véhicule précédent. En conditions normales, la règle des 3 secondes est votre meilleure alliée.`,
+      text:`Comment appliquer la règle des 3 secondes : Observez quand le véhicule devant vous passe devant un repère fixe (poteau, arbre). Comptez : "mille-un, mille-deux, mille-trois". Si vous passez devant ce repère avant la fin du compte, vous êtes trop proche. Augmentez votre distance.`,
+      keyPoints:['3 secondes en conditions normales','6 secondes par mauvais temps','+50% en cas de fatigue','Distance × 2 la nuit'],
+      extra:`Par temps de pluie ou sur route mouillée, la distance de freinage peut être multipliée par 2 à 3. Anticipez en augmentant systématiquement votre distance dès les premières gouttes.`
+    }},
+    {type:'infographic', icon:'📊', title:'Tableau des distances de freinage', time:'5 min', content:{
+      title:'Distances de freinage par vitesse (route sèche)',
+      desc:'Ces distances incluent le temps de réaction (1 seconde) + la distance de freinage.',
+      table:{
+        headers:['Vitesse','Réaction (1s)','Freinage','Total arrêt'],
+        rows:[
+          ['30 km/h','8 m','6 m','14 m'],
+          ['50 km/h','14 m','14 m','28 m'],
+          ['70 km/h','19 m','27 m','46 m'],
+          ['90 km/h','25 m','45 m','70 m'],
+          ['110 km/h','31 m','67 m','98 m'],
+          ['130 km/h','36 m','93 m','129 m']
+        ]
+      },
+      note:'Sur route mouillée, multipliez ces distances par 1.5 à 2 !'
+    }}
+  ],
+  activites:[
+    {type:'case_study', icon:'🔍', title:'Cas pratique : L\'autoroute à grande vitesse', time:'8 min', content:{
+      scenario:`Vous roulez à 120 km/h sur l'autoroute. La circulation est fluide. Vous êtes à environ 15 mètres du véhicule qui vous précède. Il fait soleil. Soudain, les feux stop du véhicule devant s'allument violemment.`,
+      question:'Quelle est votre distance d\'arrêt à 120 km/h et que faut-il faire ?',
+      options:[
+        'Freiner immédiatement au maximum, 15 mètres suffiront.',
+        'À 120 km/h, l\'arrêt total nécessite environ 115 mètres. Avec 15 m, la collision est inévitable. Il faut maintenir 3 secondes de distance minimum.',
+        'Klaxonner pour prévenir et se rabattre sur la voie de droite.',
+        'Accélérer pour dépasser rapidement avant l\'impact.'
+      ],
+      correct:1,
+      explanation:'À 120 km/h, vous parcourez 33 mètres par seconde. Avec 1 seconde de temps de réaction, vous avez déjà parcouru 33 m avant même de toucher les freins. La distance de freinage est ensuite de ~83 m, soit ~116 m au total. Une distance de 15 m est totalement insuffisante.'
+    }}
+  ],
+  quiz:[
+    {q:'La règle des 3 secondes correspond à :', opts:['Accélérer pendant 3 secondes','L\'intervalle minimum à maintenir avec le véhicule devant soi','S\'arrêter 3 secondes aux feux','Changer de voie en 3 secondes'], ans:1, exp:'La règle des 3 secondes donne le temps minimum pour réagir si le véhicule devant freine brusquement.'},
+    {q:'À 50 km/h, la distance totale d\'arrêt est d\'environ :', opts:['10 mètres','28 mètres','50 mètres','70 mètres'], ans:1, exp:'14 m de réaction + 14 m de freinage = 28 m environ sur route sèche à 50 km/h.'},
+    {q:'Par temps de pluie, la distance de sécurité doit être :', opts:['La même qu\'en temps sec','Réduite car les freins sont plus froids','Doublée ou triplée','Multipliée par 0.5'], ans:2, exp:'Sur route mouillée, les distances de freinage augmentent de 50% à 200% selon l\'état de la chaussée.'},
+    {q:'Quel est l\'élément principal qui allonge la distance d\'arrêt ?', opts:['La couleur du véhicule','La masse du conducteur','La vitesse du véhicule','La marque du véhicule'], ans:2, exp:'La distance de freinage augmente avec le carré de la vitesse : doubler la vitesse quadruple la distance.'},
+    {q:'À 90 km/h, combien de mètres parcourez-vous pendant votre temps de réaction (1 seconde) ?', opts:['15 mètres','25 mètres','35 mètres','45 mètres'], ans:1, exp:'90 km/h = 25 m/s. En 1 seconde de réaction, vous parcourez 25 mètres sans toucher les freins.'}
+  ]
+},
+{
+  id:3, icon:'👁️', title:'Anticipation & Vigilance', sub:'Lire l\'environnement routier', duration:'20 min',
+  cours:[
+    {type:'concept', icon:'📘', title:'L\'anticipation visuelle', time:'7 min', content:{
+      intro:`L'anticipation est la compétence centrale du conducteur défensif. Elle consiste à regarder loin devant, à traiter les informations et à se préparer à agir avant que le danger ne soit imminent.`,
+      text:`Un conducteur expert regarde 12 à 15 secondes devant lui (soit 200 à 350 mètres à 90 km/h). Il balaie régulièrement ses rétroviseurs toutes les 5 à 8 secondes et identifie les zones d'incertitude avant de les atteindre.`,
+      keyPoints:['Regarder 12-15 s devant soi','Balayer les rétroviseurs toutes les 5-8 s','Identifier les angles morts','Anticiper les intersections'],
+      extra:`Les angles morts représentent une zone dangereuse autour de votre véhicule que vous ne pouvez pas voir dans vos rétroviseurs. Pratiquez le mouvement de la tête pour vérifier les angles morts avant chaque changement de voie.`
+    }},
+    {type:'infographic', icon:'📊', title:'Zones de vision et angles morts', time:'5 min', content:{
+      title:'Gestion du champ visuel — Ce que vous devez surveiller',
+      desc:'Votre attention visuelle doit couvrir 360° en permanence.',
+      steps:[
+        {num:'👀', title:'Vision lointaine (12-15 s)', desc:'Détecter les obstacles, intersections et zones à risque très en avance.'},
+        {num:'🔍', title:'Vision intermédiaire (4-8 s)', desc:'Surveiller les piétons, véhicules ralentis, panneaux de signalisation.'},
+        {num:'⚠️', title:'Vision proche (0-2 s)', desc:'Maintenir la trajectoire et gérer les distances immédiates.'},
+        {num:'🪞', title:'Rétroviseurs (toutes les 5-8 s)', desc:'Connaître la position des véhicules derrière vous à tout moment.'},
+        {num:'↔️', title:'Angles morts', desc:'Vérifier physiquement avant tout changement de voie ou dépassement.'}
+      ]
+    }}
+  ],
+  activites:[
+    {type:'case_study', icon:'🔍', title:'Cas pratique : Le carrefour en ville', time:'8 min', content:{
+      scenario:`Vous approchez d'un carrefour à feux en ville. Le feu vient de passer au vert pour vous. Sur votre gauche, une voiture semble ralentir mais n'est pas complètement arrêtée. Un camion de livraison garé à droite limite votre visibilité sur les 2 roues éventuels.`,
+      question:'Quelle est la meilleure attitude à adopter ?',
+      options:[
+        'Accélérer pour traverser rapidement dès que le feu passe au vert.',
+        'Lever le pied, vérifier la circulation des deux côtés, progresser prudemment malgré le feu vert.',
+        'Klaxonner pour signaler votre présence et traverser.',
+        'Attendre 5 secondes supplémentaires puis traverser rapidement.'
+      ],
+      correct:1,
+      explanation:'Le feu vert donne la priorité mais ne garantit pas la sécurité. Un conducteur défensif observe et valide que la voie est libre avant d\'engager, particulièrement lorsque la visibilité est réduite (camion) ou qu\'un autre véhicule semble ne pas respecter son feu rouge.'
+    }}
+  ],
+  quiz:[
+    {q:'Un conducteur expert regarde combien de secondes devant lui ?', opts:['2 à 3 secondes','5 à 7 secondes','12 à 15 secondes','20 à 25 secondes'], ans:2, exp:'Regarder 12 à 15 secondes en avant permet de détecter les dangers et d\'avoir le temps d\'adapter sa conduite.'},
+    {q:'À quelle fréquence doit-on vérifier ses rétroviseurs ?', opts:['Toutes les 30 secondes','Toutes les 5 à 8 secondes','Uniquement pour stationner','Avant chaque dépassement seulement'], ans:1, exp:'Consulter ses rétroviseurs toutes les 5-8 secondes maintient une conscience complète de l\'environnement.'},
+    {q:'L\'angle mort se situe :', opts:['Juste devant le véhicule','Dans la zone non visible par les rétroviseurs sur les côtés','Uniquement à l\'arrière du véhicule','À l\'intérieur du véhicule'], ans:1, exp:'Les angles morts sont des zones sur les côtés du véhicule que les rétroviseurs ne couvrent pas.'},
+    {q:'Comment éliminer un angle mort avant un dépassement ?', opts:['Klaxonner','Accélérer','Tourner physiquement la tête pour observer','Regarder uniquement dans le rétroviseur central'], ans:2, exp:'Seul un mouvement physique de la tête permet de vérifier les angles morts avec certitude.'},
+    {q:'Qu\'est-ce qu\'une zone d\'incertitude ?', opts:['Un parking couvert','Une zone où la visibilité ou le comportement des autres est imprévisible','Un panneau de signalisation non lisible','Une route en mauvais état'], ans:1, exp:'Les zones d\'incertitude incluent les carrefours, sorties de cours d\'école, zones de travaux — partout où l\'imprévu est possible.'}
+  ]
+},
+{
+  id:4, icon:'⚠️', title:'Risques & Distractions', sub:'Les comportements dangereux au volant', duration:'22 min',
+  cours:[
+    {type:'concept', icon:'📘', title:'Les distractions au volant', time:'8 min', content:{
+      intro:`La distraction au volant est l'une des causes majeures d'accidents graves. Utiliser un téléphone portable au volant multiplie par 4 le risque d'accident — autant que conduire avec un taux d'alcool de 0,5 g/L.`,
+      text:`Il existe 3 types de distractions : Visuelle (quitter la route des yeux), Manuelle (lâcher le volant), Cognitive (penser à autre chose). Le téléphone combiné les trois à la fois. Lire un SMS à 50 km/h revient à rouler les yeux fermés pendant 50 mètres.`,
+      keyPoints:['Téléphone = ×4 le risque','SMS = 50 m les yeux fermés','Conversation = ×2 le risque','Passager animé = ×1.6'],
+      extra:`Même le kit mains-libres divise par deux vos capacités de réaction. La solution : téléphone en mode avion ou "Ne pas déranger en voiture", actif automatiquement dès le démarrage.`
+    }},
+    {type:'infographic', icon:'📊', title:'Les 8 principales distractions', time:'5 min', content:{
+      title:'Palmarès des distractions au volant',
+      desc:'Ces distractions augmentent significativement le risque d\'accident.',
+      steps:[
+        {num:'1', title:'Téléphone en main', desc:'×4 le risque d\'accident. Illégal dans la plupart des pays.'},
+        {num:'2', title:'Envoi/lecture de SMS', desc:'Yeux quittent la route 5 secondes en moyenne = 70 m à 50 km/h.'},
+        {num:'3', title:'Conversation animée', desc:'Charge cognitive élevée même avec kit mains-libres (×2 le risque).'},
+        {num:'4', title:'Système GPS / écran', desc:'Regarder l\'écran de navigation détourne l\'attention visuelle.'},
+        {num:'5', title:'Manger ou boire au volant', desc:'Conduite à une main, attention partagée = réaction plus lente.'},
+        {num:'6', title:'Passagers perturbateurs', desc:'Conversations vives, enfants agités augmentent le risque.'},
+        {num:'7', title:'Musique à volume élevé', desc:'Masque les sons d\'alerte extérieurs (klaxons, sirènes).'},
+        {num:'8', title:'Pensées intrusives / stress', desc:'La distraction cognitive invisible mais très dangereuse.'}
+      ]
+    }}
+  ],
+  activites:[
+    {type:'case_study', icon:'🔍', title:'Cas pratique : Le SMS au volant', time:'8 min', content:{
+      scenario:`Kofi reçoit un SMS important de son patron alors qu'il roule à 60 km/h en ville. Il pense "c'est urgent, je vais juste regarder rapidement". Il prend son téléphone et lit le message en 5 secondes. Pendant ces 5 secondes, un enfant traverse en courant à 30 mètres.`,
+      question:'Que se passe-t-il et qu\'aurait dû faire Kofi ?',
+      options:[
+        'C\'est acceptable car c\'était urgent et il n\'a regardé que 5 secondes.',
+        'En 5 secondes à 60 km/h, Kofi a parcouru 83 mètres sans voir la route. Il doit s\'arrêter pour lire ses messages.',
+        'Kofi aurait dû juste ralentir à 30 km/h pour lire le message.',
+        'La solution est d\'utiliser le kit mains-libres pour les messages importants.'
+      ],
+      correct:1,
+      explanation:'À 60 km/h, on parcourt 16,7 m/s. En 5 secondes de lecture = 83 mètres parcourus "à l\'aveugle". L\'enfant à 30 m est déjà sous le véhicule avant même que Kofi ne lève les yeux. La seule solution : se garer, couper le moteur, puis lire.'
+    }}
+  ],
+  quiz:[
+    {q:'Utiliser son téléphone en conduisant multiplie le risque d\'accident par :', opts:['2','4','8','10'], ans:1, exp:'Le téléphone en main multiplie le risque d\'accident par 4, équivalent à conduire en état d\'ivresse légère.'},
+    {q:'Lire un SMS à 50 km/h pendant 5 secondes, c\'est :', opts:['Acceptable si c\'est urgent','Rouler les yeux fermés pendant environ 70 mètres','Moins dangereux qu\'une conversation','Sûr si l\'on est à un feu rouge'], ans:1, exp:'50 km/h = 13,9 m/s. En 5 secondes, vous parcourez environ 70 m sans regarder la route.'},
+    {q:'Quel type de distraction combine les 3 formes de distraction (visuelle, manuelle, cognitive) ?', opts:['Écouter la radio','Téléphoner en main','Regarder un passager','Penser à un problème'], ans:1, exp:'Le téléphone en main mobilise les yeux (visuel), une main (manuel) et le cerveau (cognitif) simultanément.'},
+    {q:'Même le kit mains-libres est dangereux car :', opts:['Il ne fonctionne pas bien','La conversation mobilise le cerveau (distraction cognitive)','Il prend trop de place','Il n\'est pas légal partout'], ans:1, exp:'La distraction cognitive subsiste avec le mains-libres : votre cerveau traite deux flux d\'informations en même temps.'},
+    {q:'La bonne solution quand on reçoit un message urgent au volant est de :', opts:['Ralentir et lire rapidement','Utiliser la reconnaissance vocale','Se garer en lieu sûr, couper le moteur, puis répondre','Demander à un passager de répondre'], ans:2, exp:'La seule solution totalement sécurisée est de s\'arrêter complètement avant de traiter tout message ou appel.'}
+  ]
+},
+{
+  id:5, icon:'🌧️', title:'Conditions Difficiles', sub:'Adapter sa conduite à la météo', duration:'24 min',
+  cours:[
+    {type:'concept', icon:'📘', title:'Conduire par mauvais temps', time:'8 min', content:{
+      intro:`La météo modifie radicalement les conditions de conduite. Pluie, brouillard, nuit, éblouissement : chaque condition difficile impose d'adapter vitesse, éclairage et distance de sécurité.`,
+      text:`Sous la pluie, l'adhérence des pneus peut chuter de 30 à 50%. L'aquaplaning survient quand un film d'eau s'intercale entre le pneu et la chaussée — le véhicule ne répond plus ni à la direction ni aux freins. La solution : ralentir en dessous de 80 km/h et maintenir vos pneus en bon état.`,
+      keyPoints:['Pluie : distance ×2','Brouillard : feux antibrouillard + < 50 m','Nuit : phares + distance ×2','Éblouissement : ralentir, regarder le bord droit'],
+      extra:`En cas de brouillard dense (visibilité < 50 m), réduisez votre vitesse à 50 km/h maximum sur route et 80 km/h sur autoroute — quelle que soit la limitation affichée. Votre vitesse doit toujours être adaptée à votre distance de visibilité.`
+    }},
+    {type:'infographic', icon:'📊', title:'Conduire selon les conditions', time:'5 min', content:{
+      title:'Adaptations indispensables par condition météo',
+      desc:'Adapter sa conduite aux conditions sauve des vies.',
+      steps:[
+        {num:'🌧️', title:'Pluie', desc:'Réduire la vitesse de 20%, doubler les distances, allumer les feux, éviter freinage brusque.'},
+        {num:'🌫️', title:'Brouillard', desc:'Feux antibrouillard, vitesse < visibilité en secondes × 3, ne pas doubler.'},
+        {num:'🌙', title:'Nuit', desc:'Phares correctement réglés, distance × 2, surveiller les bords de route.'},
+        {num:'❄️', title:'Verglas', desc:'Vitesse × 0.5, distance × 5, freinage progressif, pas de changement brusque.'},
+        {num:'☀️', title:'Éblouissement', desc:'Visière, lunettes polarisantes, réduire la vitesse, regarder le bord droit de la route.'}
+      ]
+    }}
+  ],
+  activites:[
+    {type:'case_study', icon:'🔍', title:'Cas pratique : L\'aquaplaning sur autoroute', time:'8 min', content:{
+      scenario:`Aminata roule à 130 km/h sur l'autoroute. Une forte pluie vient de commencer. Elle sent soudainement que son volant devient "léger" et ne répond plus normalement. Le véhicule dérive légèrement. Elle panique.`,
+      question:'Aminata est en situation d\'aquaplaning. Que doit-elle faire ?',
+      options:[
+        'Freiner au maximum pour reprendre le contrôle immédiatement.',
+        'Tourner brusquement le volant vers la droite pour rejoindre la bande d\'arrêt d\'urgence.',
+        'Ne pas freiner brusquement, relâcher l\'accélérateur progressivement, tenir le volant droit, laisser le véhicule ralentir seul.',
+        'Accélérer pour traverser plus vite la zone d\'eau.'
+      ],
+      correct:2,
+      explanation:'En cas d\'aquaplaning, freiner ou tourner brusquement aggrave la perte de contrôle. Il faut : (1) Ne pas paniquer, (2) Relâcher progressivement l\'accélérateur, (3) Tenir fermement le volant bien droit, (4) Laisser le véhicule décélérer naturellement jusqu\'à ce que les pneus retrouvent l\'adhérence. Ensuite, réduire sa vitesse et augmenter les distances.'
+    }}
+  ],
+  quiz:[
+    {q:'En cas de fortes pluies, la distance de sécurité doit être :', opts:['Identique au temps sec','Légèrement augmentée','Doublée ou plus','Réduite car la visibilité est limitée'], ans:2, exp:'Sur chaussée mouillée, les distances de freinage augmentent de 50 à 200% selon l\'intensité de la pluie.'},
+    {q:'L\'aquaplaning survient quand :', opts:['Les freins surchauffent','Un film d\'eau s\'intercale entre pneu et chaussée, supprimant l\'adhérence','La direction assistée tombe en panne','Les pneus sont trop gonflés'], ans:1, exp:'L\'aquaplaning est la perte d\'adhérence totale due à un film d\'eau. Il survient typiquement au-dessus de 80 km/h par forte pluie.'},
+    {q:'En cas d\'aquaplaning, il faut :', opts:['Freiner au maximum','Tourner brusquement','Relâcher progressivement l\'accélérateur et tenir le volant droit','Accélérer pour traverser la zone d\'eau'], ans:2, exp:'Tout mouvement brusque aggrave la perte de contrôle. Relâcher progressivement et tenir droit laisse le véhicule retrouver l\'adhérence.'},
+    {q:'Par brouillard dense, vous devez allumer :', opts:['Les feux de route (phares)','Les feux antibrouillard avant et adapter la vitesse à la visibilité','Uniquement les feux de position','Les warnings (feux de détresse)'], ans:1, exp:'Les feux antibrouillard sont conçus pour éclairer largement et bas. Les phares normaux créent un mur de lumière réfléchi qui aveugle.'},
+    {q:'La nuit, pourquoi augmenter encore la distance de sécurité ?', opts:['Ce n\'est pas nécessaire la nuit','Parce que les distances sont différentes','La visibilité réduite diminue la distance de détection des obstacles','Pour économiser le carburant'], ans:2, exp:'La nuit, vous ne voyez les obstacles qu\'à portée de vos phares. À 90 km/h, votre distance d\'arrêt (70 m) peut dépasser votre distance de visibilité (60 m) — danger absolu.'}
+  ]
+},
+{
+  id:6, icon:'😴', title:'Fatigue & Vigilance', sub:'Reconnaître et gérer la fatigue', duration:'20 min',
+  cours:[
+    {type:'concept', icon:'📘', title:'La fatigue au volant : danger silencieux', time:'7 min', content:{
+      intro:`La somnolence au volant est responsable de 30% des accidents mortels sur autoroute. Un conducteur somnolent a des réflexes aussi dégradés qu'un conducteur alcoolisé — mais il ne le ressent pas toujours.`,
+      text:`La fatigue altère la vision, ralentit les réflexes, réduit la prise de décision et provoque des "micro-sommeils" de 2 à 30 secondes. À 130 km/h, 5 secondes de micro-sommeil = 180 mètres parcourus sans conscience.`,
+      keyPoints:['Pause toutes les 2 heures','Micro-sommeil = coma temporaire','Caféine : efficace 30 min max','Dormir : seule vraie solution'],
+      extra:`Les signes précurseurs de somnolence : paupières lourdes, bâillements répétés, regards fixes, difficultés à maintenir la trajectoire, oubli des derniers kilomètres. Dès l\'apparition de ces signes : ARRÊT IMMÉDIAT.`
+    }},
+    {type:'infographic', icon:'📊', title:'Reconnaître et agir contre la fatigue', time:'5 min', content:{
+      title:'La fatigue au volant — Signes et solutions',
+      desc:'Reconnaître ces signes et agir immédiatement.',
+      steps:[
+        {num:'⚠️', title:'Paupières lourdes', desc:'Premier signal d\'alarme. Arrêtez-vous dans les 10 minutes.'},
+        {num:'⚠️', title:'Bâillements répétés', desc:'Le corps manque d\'oxygène. Ouvrez les fenêtres ET arrêtez-vous.'},
+        {num:'⚠️', title:'Perte de trajectoire', desc:'Dérives involontaires = micro-sommeils déjà présents. ARRÊT URGENT.'},
+        {num:'✅', title:'Solution 1 : Pause + sieste', desc:'S\'arrêter 20 minutes et dormir. Seule solution efficace.'},
+        {num:'✅', title:'Solution 2 : Caféine + sieste', desc:'Boire un café PUIS dormir 20 min : la caféine agit au réveil.'},
+        {num:'✅', title:'Solution 3 : Anticipation', desc:'Dormir 7-8h avant un long trajet, éviter les heures 2h-6h du matin.'}
+      ]
+    }}
+  ],
+  activites:[
+    {type:'case_study', icon:'🔍', title:'Cas pratique : Le trajet nocturne', time:'8 min', content:{
+      scenario:`Ibrahim doit conduire 400 km de nuit pour arriver à un rendez-vous important le lendemain matin. Il est 2h du matin. Il n'a dormi que 4 heures. Il bâille régulièrement depuis 30 minutes et a failli quitter la route deux fois. Il pense : "Je suis presque arrivé, encore 80 km".`,
+      question:'Que devrait faire Ibrahim ?',
+      options:[
+        'Boire un grand café et ouvrir les fenêtres pour finir les 80 km.',
+        'Mettre la musique très fort et s\'arrêter toutes les 20 km.',
+        'S\'arrêter immédiatement sur une aire de repos, dormir 1 à 2 heures, reprendre ensuite.',
+        'Appeler quelqu\'un pour garder la conversation et se tenir éveillé.'
+      ],
+      correct:2,
+      explanation:'Ibrahim présente des signes graves de somnolence (bâillements, déviation de trajectoire). À 2h du matin, après seulement 4h de sommeil, les performances sont comparables à un taux d\'alcoolémie élevé. La seule solution sûre est de s\'arrêter et de dormir. "Encore 80 km" peut être le trajet de trop — et ces 80 km peuvent prendre une vie.'
+    }}
+  ],
+  quiz:[
+    {q:'Quelle proportion des accidents mortels sur autoroute est liée à la somnolence ?', opts:['5%','15%','30%','50%'], ans:2, exp:'La somnolence cause environ 30% des accidents mortels sur autoroute, souvent sans traces de freinage.'},
+    {q:'Un micro-sommeil dure :', opts:['1/10 de seconde','2 à 30 secondes','1 à 2 minutes','5 minutes'], ans:1, exp:'Les micro-sommeils durent de 2 à 30 secondes. À 130 km/h, 5 secondes = 180 mètres parcourus sans conscience.'},
+    {q:'La seule vraie solution contre la fatigue au volant est :', opts:['La caféine','Ouvrir les fenêtres','Mettre la musique fort','Dormir'], ans:3, exp:'Seul le sommeil restaure les capacités cognitives. Café, air frais et musique retardent la somnolence de 15-30 min maximum.'},
+    {q:'À quelle fréquence minimum faut-il faire des pauses lors d\'un long trajet ?', opts:['Toutes les 4 heures','Toutes les 2 heures','Toutes les 6 heures','Uniquement quand on est fatigué'], ans:1, exp:'Une pause de 15-20 min toutes les 2 heures est la règle de sécurité de référence pour les longs trajets.'},
+    {q:'Quel est le PREMIER signe annonciateur de somnolence à surveiller ?', opts:['Maux de tête','Paupières lourdes et bâillements répétés','Crampes dans les jambes','Sensation de soif'], ans:1, exp:'Les paupières lourdes et les bâillements sont les premiers signaux d\'alarme. Ils doivent déclencher un arrêt dans les plus brefs délais.'}
+  ]
+},
+{
+  id:7, icon:'🚦', title:'Intersections & Priorités', sub:'Maîtriser les règles de priorité', duration:'22 min',
+  cours:[
+    {type:'concept', icon:'📘', title:'Les intersections : zones à haut risque', time:'8 min', content:{
+      intro:`Les intersections représentent 40% des accidents corporels en milieu urbain. C'est là que se croisent le plus grand nombre de trajectoires différentes, créant des zones de risque élevé même pour les conducteurs prudents.`,
+      text:`La règle prioritaire est la priorité à droite : tout véhicule venant de votre droite a priorité, sauf indication contraire. Cette règle s'efface devant la signalisation (Stop, Cédez le passage, Feu) mais attention : même avec la priorité, vérifiez toujours avant d'engager.`,
+      keyPoints:['Priorité à droite = règle de base','Stop = arrêt TOTAL obligatoire','Cédez le passage = ralentir et céder','Feu vert ≠ voie libre garantie'],
+      extra:`Au Stop, l'arrêt doit être TOTAL — roues immobiles — même si vous "voyez" que la voie est libre. L'arrêt permet de scruter correctement l'intersection et de reprendre une vision à 360°. Beaucoup de conducteurs font un "rolling stop" (quasi-arrêt) : c'est illégal et dangereux.`
+    }},
+    {type:'infographic', icon:'📊', title:'Les règles de priorité', time:'5 min', content:{
+      title:'Qui a la priorité ? — Guide rapide',
+      desc:'Mémorisez ces règles pour naviguer les intersections en sécurité.',
+      steps:[
+        {num:'🔴', title:'STOP', desc:'Arrêt total obligatoire. Céder la priorité à TOUS les véhicules. Reprendre que lorsque la voie est entièrement libre.'},
+        {num:'🔺', title:'Cédez le passage', desc:'Ralentir, être prêt à s\'arrêter. Céder la priorité aux véhicules sur la voie principale.'},
+        {num:'↗️', title:'Priorité à droite', desc:'Sans panneau : le véhicule venant de votre droite est prioritaire. Valable même sur voie secondaire.'},
+        {num:'🔵', title:'Rond-point', desc:'Priorité aux véhicules déjà dans le rond-point (sauf indication contraire). Cédez le passage à l\'entrée.'},
+        {num:'🚨', title:'Véhicules prioritaires', desc:'Pompiers, police, ambulances : céder immédiatement la voie, se rabattre à droite et s\'arrêter.'}
+      ]
+    }}
+  ],
+  activites:[
+    {type:'case_study', icon:'🔍', title:'Cas pratique : Le feu défaillant', time:'8 min', content:{
+      scenario:`Vous arrivez à un carrefour habituellement équipé de feux de signalisation. Les feux ne fonctionnent pas à cause d'une panne de courant. Les autres conducteurs semblent confus : certains passent sans s'arrêter, d'autres klaxonnent.`,
+      question:'Comment devez-vous vous comporter à ce carrefour ?',
+      options:[
+        'Passer rapidement car les feux sont éteints et les gens s\'arrangent.',
+        'Appliquer la règle de priorité à droite et traiter le carrefour comme un Stop : avancer prudemment en cédant la priorité à droite.',
+        'Klaxonner pour signaler votre passage et traverser.',
+        'Faire demi-tour et chercher un autre itinéraire.'
+      ],
+      correct:1,
+      explanation:'En l\'absence de feux fonctionnels, la règle de la priorité à droite s\'applique. Comportez-vous comme face à un Stop : arrêt ou quasi-arrêt, vérification à 360°, cession de priorité aux véhicules venant de droite. La communication avec les autres conducteurs (gestes, regard) est précieuse pour traverser en sécurité.'
+    }}
+  ],
+  quiz:[
+    {q:'Que signifie la règle de "priorité à droite" ?', opts:['Rouler toujours à droite','Tout véhicule venant de votre droite est prioritaire sauf indication contraire','Laisser passer les piétons à droite','Tourner à droite est toujours prioritaire'], ans:1, exp:'La priorité à droite est la règle de base : le véhicule venant de votre droite passe en premier sauf indication contraire.'},
+    {q:'Au panneau STOP, l\'arrêt doit être :', opts:['Un ralentissement fort','Un quasi-arrêt','Un arrêt total — roues complètement immobiles','Optionnel si personne ne vient'], ans:2, exp:'Le Stop impose un arrêt TOTAL (roues immobiles), obligatoire même si la voie paraît libre. C\'est la loi et la sécurité.'},
+    {q:'Dans un rond-point, qui a la priorité ?', opts:['Les véhicules qui entrent dans le rond-point','Les véhicules déjà dans le rond-point','Le véhicule le plus grand','Celui qui klaxonne en premier'], ans:1, exp:'En France et dans la plupart des pays, les véhicules déjà engagés dans le rond-point sont prioritaires sur ceux qui entrent.'},
+    {q:'Un feu de signalisation est en panne. Que s\'applique ?', opts:['La priorité aux véhicules les plus rapides','La règle de priorité à droite','On peut passer librement','Uniquement les bus ont la priorité'], ans:1, exp:'En l\'absence de feux, la règle de priorité à droite reprend ses droits. Comportement de type Stop recommandé.'},
+    {q:'En approchant d\'une intersection, même avec feu vert, il faut :', opts:['Accélérer pour passer avant le rouge','Maintenir la vitesse, le feu vert garantit la priorité','Vérifier que les autres véhicules respectent bien leur feu rouge','Klaxonner pour signaler son passage'], ans:2, exp:'Le feu vert donne la priorité légale mais ne garantit pas la sécurité physique. Vérifier que les autres s\'arrêtent bien est une pratique de conduite défensive essentielle.'}
+  ]
+},
+{
+  id:8, icon:'🚨', title:'Situations d\'Urgence', sub:'Réagir correctement face à l\'imprévu', duration:'25 min',
+  cours:[
+    {type:'concept', icon:'📘', title:'Réagir en situation d\'urgence', time:'8 min', content:{
+      intro:`Les situations d'urgence au volant — freinage d'urgence, pneu crevé, perte de contrôle — surviennent en moins de 3 secondes. Une préparation mentale préalable est la seule façon d'éviter la panique et d'agir efficacement.`,
+      text:`La procédure PAS (Protéger - Alerter - Secourir) s'applique à tout accident. En cas de panne ou d'accident, la première action est de sécuriser la zone pour éviter le sur-accident — particulièrement dangereux sur autoroute.`,
+      keyPoints:['PAS : Protéger, Alerter, Secourir','Triangle à 150 m minimum','Gilet fluorescent AVANT de sortir','Appel d\'urgence : 15, 17, 18 ou 112'],
+      extra:`En cas de freinage d'urgence avec ABS : appuyez FORT et TENEZ le frein. L'ABS fait vibrer la pédale — c'est normal. Ne pomper pas les freins. Maintenez la pression jusqu'à l'arrêt complet et gardez le contrôle de la direction.`
+    }},
+    {type:'infographic', icon:'📊', title:'La procédure PAS', time:'5 min', content:{
+      title:'PAS — Protéger · Alerter · Secourir',
+      desc:'Ces 3 étapes s\'appliquent à TOUT accident ou panne sur la voie publique.',
+      steps:[
+        {num:'P', title:'PROTÉGER', desc:'Baliser la zone : gilet AVANT de sortir, triangle à 150 m minimum. Couper le contact, stabiliser le véhicule.'},
+        {num:'A', title:'ALERTER', desc:'Appeler les secours : 15 (SAMU), 17 (Police), 18 (Pompiers) ou 112 (numéro européen d\'urgence).'},
+        {num:'S', title:'SECOURIR', desc:'Porter les premiers secours si formé. Sinon : parler aux victimes, les rassurer, ne PAS les déplacer sauf danger immédiat (incendie).'},
+        {num:'⚠️', title:'Autoroute : précautions supplémentaires', desc:'Ne jamais traverser les voies. Rester derrière la glissière de sécurité. Attendre les secours à l\'abri.'},
+        {num:'📞', title:'Numéros d\'urgence', desc:'112 (Urgences Europe) · 15 (SAMU) · 17 (Police) · 18 (Pompiers) · 15/196 (Aide médicale urgente Afrique)'}
+      ]
+    }}
+  ],
+  activites:[
+    {type:'case_study', icon:'🔍', title:'Cas pratique : Pneu crevé à haute vitesse', time:'8 min', content:{
+      scenario:`Vous roulez à 110 km/h sur une nationale. Soudain, une détonation — votre pneu avant gauche vient d'éclater. Le véhicule tire violemment à gauche. Votre premier réflexe est de braquer à droite et de freiner à fond.`,
+      question:'Ce réflexe instinctif est-il le bon ? Que faut-il vraiment faire ?',
+      options:[
+        'Oui, freiner fort et braquer à l\'opposé est la bonne réaction.',
+        'Non. Tenir fermement le volant, NE PAS freiner brusquement, laisser le véhicule décélérer seul, puis se rabattre progressivement.',
+        'Accélérer légèrement pour maintenir la trajectoire.',
+        'Couper le contact immédiatement.'
+      ],
+      correct:1,
+      explanation:'Freiner brutalement ou braquer violemment lors d\'une crevaison provoque une perte de contrôle totale, souvent mortelle. La bonne technique : (1) Grip ferme sur le volant à 9h15, (2) Ne pas freiner brusquement, laisser décélérer naturellement, (3) Contre-braquer doucement pour compenser la dérive, (4) Une fois sous 60 km/h, freiner progressivement et se rabattre. Plus la décélération est douce, mieux c\'est.'
+    }}
+  ],
+  quiz:[
+    {q:'La procédure PAS signifie :', opts:['Piétons, Autoroute, Signalisation','Protéger, Alerter, Secourir','Prévenir, Aider, Signaler','Pause, Arrêt, Sécurité'], ans:1, exp:'PAS = Protéger la zone, Alerter les secours, Secourir les victimes. Toujours dans cet ordre.'},
+    {q:'Sur autoroute, en cas de panne, il faut en priorité :', opts:['Rester dans le véhicule et appeler','Mettre son gilet fluorescent AVANT de sortir, puis poser le triangle à 150 m minimum','Pousser le véhicule sur la bande d\'arrêt d\'urgence','Traverser l\'autoroute pour trouver de l\'aide'], ans:1, exp:'Le gilet doit être mis AVANT de sortir du véhicule. On le met à bord, puis on sort. Le triangle est posé à 150 m minimum (200-300 m recommandés).'},
+    {q:'En cas de freinage d\'urgence avec ABS, il faut :', opts:['Pomper rapidement les freins','Appuyer fort et maintenir la pression, ne pas pomper','Freiner progressivement','Couper le contact et freiner'], ans:1, exp:'L\'ABS fait vibrer la pédale — c\'est normal. Maintenez une pression ferme et continue. Ne pompez pas, cela désactive l\'ABS.'},
+    {q:'En cas d\'accident avec blessés, ne pas déplacer les victimes sauf :', opts:['Si elles demandent à être déplacées','Danger immédiat pour leur vie (incendie, noyade)','Si un médecin n\'est pas disponible','Toujours, pour les installer confortablement'], ans:1, exp:'Déplacer une victime peut aggraver des blessures au dos ou à la nuque. On ne déplace que si le maintien en place expose à un danger immédiat plus grave.'},
+    {q:'Le numéro d\'urgence européen accessible depuis tout téléphone (même sans réseau) est :', opts:['999','110','112','911'], ans:2, exp:'Le 112 est le numéro d\'urgence universel européen. Il fonctionne depuis tout téléphone, même sans carte SIM, même sans réseau opérateur.'}
+  ]
+}
+];
+
+// ─── STATE ───────────────────────────────────────────────────────────
+let state = {
+  progress: JSON.parse(localStorage.getItem('sd_progress') || '{}'),
+  currentModule: null,
+  currentLesson: null,
+  currentTab: 'cours',
+  quiz: { moduleId:null, questions:[], current:0, answers:[], answered:false },
+  lessonBackScreen: 'module'
+};
+
+function saveProgress(){ localStorage.setItem('sd_progress', JSON.stringify(state.progress)); }
+
+function getModuleProgress(id){
+  return state.progress[id] || { courseDone:[], activitesDone:[], quizScore:null, quizDone:false };
+}
+
+function isModuleLocked(id){
+  if(id === 1) return false;
+  const prev = getModuleProgress(id - 1);
+  return !prev.quizDone;
+}
+
+function isModuleCompleted(id){
+  const p = getModuleProgress(id);
+  return p.quizDone;
+}
+
+function getOverallProgress(){
+  let done = 0;
+  MODULES.forEach(m => { if(isModuleCompleted(m.id)) done++; });
+  return { done, total: MODULES.length, pct: Math.round((done / MODULES.length) * 100) };
+}
+
+function getAvgScore(){
+  let scores = [], count = 0;
+  MODULES.forEach(m => {
+    const p = getModuleProgress(m.id);
+    if(p.quizScore !== null){ scores.push(p.quizScore); count++; }
+  });
+  if(!count) return 0;
+  return Math.round(scores.reduce((a,b)=>a+b,0) / count);
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const navMap = {home:'nav-home', progress:'nav-progress', certificate:'nav-cert'};
+  if(navMap[id]) document.getElementById(navMap[id]).classList.add('active');
+  if(id === 'home') renderHome();
+  if(id === 'progress') renderProgress();
+  if(id === 'certificate') renderCertificate();
+}
+
+// ─── HOME ─────────────────────────────────────────────────────────────
+function renderHome(){
+  const op = getOverallProgress();
+  document.getElementById('stat-modules').textContent = op.done + '/8';
+  document.getElementById('stat-score').textContent = getAvgScore() + '%';
+  document.getElementById('hero-prog').style.width = op.pct + '%';
+
+  const list = document.getElementById('module-list');
+  list.innerHTML = '';
+  MODULES.forEach(m => {
+    const locked = isModuleLocked(m.id);
+    const done = isModuleCompleted(m.id);
+    const p = getModuleProgress(m.id);
+    let statusClass = locked ? 'locked' : (done ? 'completed' : 'active-mod');
+    let tag = locked ? '<span class="tag lock">🔒 Verrouillé</span>' : (done ? '<span class="tag ok">✅ Complété</span>' : '<span class="tag warn">▶ En cours</span>');
+    let scoreTag = (p.quizScore !== null) ? `<span class="tag ok">${p.quizScore}%</span>` : '';
+
+    list.innerHTML += `
+    <div class="module-card ${statusClass}" onclick="${locked ? 'showToast(\'Terminez le module précédent d\'abord !\')' : `openModule(${m.id})`}">
+      <div class="mod-icon">${m.icon}</div>
+      <div class="mod-info">
+        <div class="mod-num">Module ${m.id}</div>
+        <div class="mod-title">${m.title}</div>
+        <div class="mod-sub">${m.sub}</div>
+        <div class="mod-meta">${tag}${scoreTag}<span class="tag">⏱ ${m.duration}</span></div>
+      </div>
+      <div class="mod-arrow">${locked ? '🔒' : (done ? '✅' : '›')}</div>
+    </div>`;
+  });
+}
+
+// ─── MODULE ───────────────────────────────────────────────────────────
+function openModule(id){
+  state.currentModule = MODULES.find(m => m.id === id);
+  const m = state.currentModule;
+  document.getElementById('mod-top-title').textContent = 'Module ' + m.id;
+  document.getElementById('mod-big-icon').textContent = m.icon;
+  document.getElementById('mod-hero-title').textContent = m.title;
+  document.getElementById('mod-hero-desc').textContent = m.sub;
+  document.getElementById('mod-pill-duration').textContent = '⏱ ' + m.duration;
+  document.getElementById('mod-pill-items').textContent = '📚 ' + (m.cours.length + m.activites.length + 1) + ' contenus';
+  switchTab('cours', document.querySelector('.tab-btn'));
+  showScreen('module');
+}
+
+function switchTab(tab, btn){
+  state.currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.getElementById('tab-cours').style.display = tab === 'cours' ? 'block' : 'none';
+  document.getElementById('tab-activites').style.display = tab === 'activites' ? 'block' : 'none';
+  document.getElementById('tab-quiz').style.display = tab === 'quiz' ? 'block' : 'none';
+  renderTab(tab);
+}
+
+function renderTab(tab){
+  const m = state.currentModule;
+  if(!m) return;
+  const p = getModuleProgress(m.id);
+
+  if(tab === 'cours'){
+    const el = document.getElementById('tab-cours');
+    el.innerHTML = '<div style="padding:12px 12px 4px">';
+    m.cours.forEach((item, i) => {
+      const done = p.courseDone && p.courseDone.includes(i);
+      el.innerHTML += renderContentItem(item, i, done, 'cours', m.id);
+    });
+    el.innerHTML += '</div>';
+  }
+  if(tab === 'activites'){
+    const el = document.getElementById('tab-activites');
+    el.innerHTML = '<div style="padding:12px 12px 4px">';
+    m.activites.forEach((item, i) => {
+      const done = p.activitesDone && p.activitesDone.includes(i);
+      el.innerHTML += renderContentItem(item, i, done, 'activites', m.id);
+    });
+    el.innerHTML += '</div>';
+  }
+  if(tab === 'quiz'){
+    const el = document.getElementById('tab-quiz');
+    const done = p.quizDone;
+    const score = p.quizScore;
+    el.innerHTML = `
+    <div style="padding:16px">
+      <div class="lesson-card">
+        <h3>✏️ Quiz de validation — Module ${m.id}</h3>
+        <p>${m.quiz.length} questions pour valider vos connaissances sur <strong>${m.title}</strong>. Obtenez au moins 60% pour débloquer le module suivant.</p>
+        ${done ? `<div style="background:#d1fae5;border-radius:10px;padding:12px;margin-top:10px;text-align:center"><div style="font-size:28px;font-weight:800;color:#065f46">${score}%</div><div style="font-size:12px;color:#065f46">Score obtenu</div></div>` : ''}
+      </div>
+      <button class="btn ${done ? 'btn-outline' : 'btn-accent'} btn-full" onclick="startQuiz(${m.id})">
+        ${done ? '🔄 Repasser le quiz' : '▶ Commencer le quiz'}
+      </button>
+    </div>`;
+  }
+}
+
+function renderContentItem(item, idx, done, section, modId){
+  const typeIcons = {concept:'📘',video:'🎬',infographic:'📊',case_study:'🔍',quiz:'✏️'};
+  return `
+  <div class="content-item" onclick="openLesson('${section}',${idx},${modId})">
+    <div class="ci-header">
+      <div class="ci-icon type-${item.type}">${typeIcons[item.type]||'📄'}</div>
+      <div style="flex:1">
+        <div class="ci-title">${item.title}</div>
+        <div class="ci-meta">⏱ ${item.time}</div>
+      </div>
+      <div class="ci-status">${done ? '✅' : '○'}</div>
+    </div>
+  </div>`;
+}
+
+// ─── LESSON ───────────────────────────────────────────────────────────
+function openLesson(section, idx, modId){
+  const m = MODULES.find(x => x.id === modId);
+  const item = m[section][idx];
+  state.currentLesson = { section, idx, modId };
+  document.getElementById('lesson-title').textContent = item.title;
+  document.getElementById('lesson-back').onclick = () => {
+    showScreen('module');
+    document.querySelectorAll('.tab-btn').forEach((b,i)=>{ if(i===(section==='cours'?0:1)) b.classList.add('active'); });
+    switchTab(section, null);
+  };
+  const body = document.getElementById('lesson-body');
+  body.innerHTML = buildLessonHTML(item);
+  showScreen('lesson');
+}
+
+function buildLessonHTML(item){
+  if(item.type === 'concept'){
+    const c = item.content;
+    return `
+    <div class="lesson-card">
+      <h3>${item.title}</h3>
+      <p><strong>${c.intro}</strong></p>
+      <p>${c.text}</p>
+      ${c.extra ? `<p>${c.extra}</p>` : ''}
+    </div>
+    <div class="lesson-card">
+      <div class="kp-box">
+        <h4>Points clés à retenir</h4>
+        <div class="kp-grid">${c.keyPoints.map(k=>`<div class="kp-item">✓ ${k}</div>`).join('')}</div>
+      </div>
+    </div>`;
+  }
+  if(item.type === 'video'){
+    const c = item.content;
+    return `
+    <div class="lesson-card">
+      <h3>${item.title}</h3>
+      <div class="video-wrap">
+        <a class="video-placeholder" href="https://www.youtube.com/results?search_query=conduite+defensive+${encodeURIComponent(item.title)}" target="_blank">
+          <div class="play-btn">▶</div>
+          <span>Rechercher cette vidéo sur YouTube</span>
+          <span style="font-size:11px;opacity:.6">${item.title}</span>
+        </a>
+      </div>
+      <p>${c.description || 'Regardez cette vidéo pour approfondir le cours.'}</p>
+    </div>`;
+  }
+  if(item.type === 'infographic'){
+    const c = item.content;
+    let inner = '';
+    if(c.steps){
+      inner = `<div class="info-steps">${c.steps.map(s=>`
+        <div class="info-step">
+          <div class="step-num">${s.num}</div>
+          <div class="step-body"><div class="step-title">${s.title}</div><div class="step-desc">${s.desc}</div></div>
+        </div>`).join('')}</div>`;
+    }
+    if(c.table){
+      inner = `<div style="overflow-x:auto"><table class="stat-table">
+        <tr>${c.table.headers.map(h=>`<th>${h}</th>`).join('')}</tr>
+        ${c.table.rows.map(r=>`<tr>${r.map(d=>`<td>${d}</td>`).join('')}</tr>`).join('')}
+      </table></div>
+      ${c.note ? `<div style="background:#fef3c7;border-radius:8px;padding:10px;margin-top:10px;font-size:12px;color:#92400e;font-weight:600">⚠️ ${c.note}</div>` : ''}`;
+    }
+    return `
+    <div class="lesson-card">
+      <h3>${item.title}</h3>
+      <div class="infographic">
+        <div class="info-title">${c.title}</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px;text-align:center">${c.desc}</p>
+        ${inner}
+      </div>
+    </div>`;
+  }
+  if(item.type === 'case_study'){
+    const c = item.content;
+    const opts = c.options.map((o,i)=>
+      `<div class="case-option" id="cso-${i}" onclick="selectCaseOption(${i},${c.correct},'${c.explanation.replace(/'/g,"\\'")}')">
+        <strong>${String.fromCharCode(65+i)}.</strong> ${o}
+      </div>`).join('');
+    return `
+    <div class="lesson-card">
+      <h3>${item.title}</h3>
+      <div class="case-scenario">
+        <div class="cs-label">📋 Scénario</div>
+        <p>${c.scenario}</p>
+      </div>
+      <div class="case-q">${c.question}</div>
+      ${opts}
+      <div class="case-explain" id="case-explain" style="display:none"></div>
+    </div>`;
+  }
+  return '<div class="lesson-card"><p>Contenu en cours de chargement...</p></div>';
+}
+
+function selectCaseOption(idx, correct, explanation){
+  document.querySelectorAll('.case-option').forEach((el,i)=>{
+    el.classList.add('disabled');
+    el.onclick = null;
+    if(i === correct) el.classList.add('correct');
+    else if(i === idx) el.classList.add('wrong');
+  });
+  const expl = document.getElementById('case-explain');
+  if(expl){
+    expl.innerHTML = `<strong>${idx === correct ? '✅ Bonne réponse !' : '❌ Pas tout à fait...'}</strong>${explanation}`;
+    expl.style.display = 'block';
+  }
+}
+
+function completeLesson(){
+  const { section, idx, modId } = state.currentLesson;
+  if(!state.progress[modId]) state.progress[modId] = {courseDone:[], activitesDone:[], quizScore:null, quizDone:false};
+  const p = state.progress[modId];
+  const arr = section === 'cours' ? 'courseDone' : 'activitesDone';
+  if(!p[arr].includes(idx)) p[arr].push(idx);
+  saveProgress();
+  showToast('✅ Leçon complétée !');
+  setTimeout(()=>{
+    showScreen('module');
+    switchTab(section, null);
+    const tabIdx = section === 'cours' ? 0 : 1;
+    document.querySelectorAll('.tab-btn').forEach((b,i)=>{ b.classList.toggle('active', i===tabIdx); });
+  }, 800);
+}
+
+// ─── QUIZ ─────────────────────────────────────────────────────────────
+function startQuiz(modId){
+  const m = MODULES.find(x => x.id === modId);
+  state.quiz = { moduleId: modId, questions: m.quiz, current: 0, answers: [], answered: false };
+  document.getElementById('quiz-mod-title').textContent = 'Quiz – ' + m.title;
+  renderQuizQuestion();
+  showScreen('quiz');
+}
+
+function renderQuizQuestion(){
+  const q = state.quiz;
+  const qData = q.questions[q.current];
+  const total = q.questions.length;
+  document.getElementById('q-count').textContent = `Question ${q.current+1}/${total}`;
+  document.getElementById('q-title').textContent = `${q.current+1} sur ${total}`;
+  document.getElementById('quiz-prog-fill').style.width = ((q.current/total)*100) + '%';
+  document.getElementById('quiz-question').textContent = qData.q;
+  const letters = ['A','B','C','D'];
+  document.getElementById('quiz-options').innerHTML = qData.opts.map((o,i)=>
+    `<div class="quiz-option" id="qo-${i}" onclick="selectAnswer(${i})">
+      <span class="opt-letter">${letters[i]}</span>${o}
+    </div>`).join('');
+  document.getElementById('quiz-explain').className = 'quiz-explain';
+  document.getElementById('quiz-explain').textContent = '';
+  document.getElementById('next-btn').disabled = true;
+  document.getElementById('next-btn').textContent = q.current < total-1 ? 'Suivant →' : 'Voir les résultats';
+  state.quiz.answered = false;
+}
+
+function selectAnswer(idx){
+  if(state.quiz.answered) return;
+  state.quiz.answered = true;
+  const qData = state.quiz.questions[state.quiz.current];
+  state.quiz.answers.push({ chosen: idx, correct: qData.ans });
+  document.querySelectorAll('.quiz-option').forEach((el,i)=>{
+    el.style.pointerEvents = 'none';
+    if(i === qData.ans) el.classList.add('correct');
+    else if(i === idx) el.classList.add('wrong');
+  });
+  const expl = document.getElementById('quiz-explain');
+  expl.textContent = qData.exp;
+  expl.classList.add('show');
+  document.getElementById('next-btn').disabled = false;
+}
+
+function nextQuestion(){
+  state.quiz.current++;
+  if(state.quiz.current >= state.quiz.questions.length){
+    showQuizResult();
+  } else {
+    renderQuizQuestion();
+  }
+}
+
+function showQuizResult(){
+  const q = state.quiz;
+  const correct = q.answers.filter(a => a.chosen === a.correct).length;
+  const score = Math.round((correct / q.questions.length) * 100);
+  const passed = score >= 60;
+
+  if(!state.progress[q.moduleId]) state.progress[q.moduleId] = {courseDone:[], activitesDone:[], quizScore:null, quizDone:false};
+  const prev = state.progress[q.moduleId].quizScore;
+  if(prev === null || score > prev) state.progress[q.moduleId].quizScore = score;
+  if(passed) state.progress[q.moduleId].quizDone = true;
+  saveProgress();
+
+  document.getElementById('result-score').textContent = score + '%';
+  document.getElementById('result-emoji').textContent = score >= 80 ? '🌟' : score >= 60 ? '👍' : '📚';
+  const ans = document.getElementById('result-answers');
+  ans.innerHTML = q.answers.map((a,i)=>{
+    const ok = a.chosen === a.correct;
+    return `<div class="ra-item"><span class="ra-ico">${ok?'✅':'❌'}</span><span>Q${i+1}: ${ok?'Correct':'Incorrect — '+q.questions[i].opts[q.questions[i].ans]}</span></div>`;
+  }).join('');
+  ans.innerHTML += `<div style="margin-top:10px;padding:10px;background:${passed?'#d1fae5':'#fee2e2'};border-radius:10px;text-align:center;font-weight:700;color:${passed?'#065f46':'#991b1b'}">
+    ${passed ? '✅ Module validé ! Module suivant débloqué.' : '❌ Score insuffisant (60% requis). Révisez et réessayez !'}
+  </div>`;
+  showScreen('result');
+}
+
+function exitQuiz(){ showScreen('module'); }
+
+function finishQuiz(){
+  showScreen('module');
+  switchTab('quiz', null);
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>{ b.classList.toggle('active', i===2); });
+  renderTab('quiz');
+}
+
+// ─── PROGRESS SCREEN ─────────────────────────────────────────────────
+function renderProgress(){
+  const list = document.getElementById('progress-list');
+  list.innerHTML = '';
+  MODULES.forEach(m => {
+    const p = getModuleProgress(m.id);
+    const locked = isModuleLocked(m.id);
+    const totalItems = m.cours.length + m.activites.length;
+    const doneItems = (p.courseDone ? p.courseDone.length : 0) + (p.activitesDone ? p.activitesDone.length : 0) + (p.quizDone ? 1 : 0);
+    const pct = locked ? 0 : Math.round((doneItems / (totalItems + 1)) * 100);
+    list.innerHTML += `
+    <div class="prog-module">
+      <div class="pm-icon">${m.icon}</div>
+      <div class="pm-info">
+        <div class="pm-title">Module ${m.id} — ${m.title}</div>
+        <div class="pm-bar"><div class="pm-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="pm-pct">${locked ? '🔒' : pct + '%'}</div>
+    </div>`;
+  });
+}
+
+// ─── CERTIFICATE ──────────────────────────────────────────────────────
+function renderCertificate(){
+  const op = getOverallProgress();
+  const avg = getAvgScore();
+  const body = document.getElementById('cert-body');
+  if(op.done < MODULES.length){
+    body.innerHTML = `
+    <div class="cert-wrap">
+      <div class="lesson-card" style="text-align:center">
+        <div style="font-size:48px;margin-bottom:12px">🔒</div>
+        <h3 style="margin-bottom:10px">Certificat non disponible</h3>
+        <p>Complétez les ${MODULES.length} modules pour obtenir votre certificat de formation.</p>
+        <div style="margin-top:16px;background:#f0f4f8;border-radius:12px;padding:14px">
+          <div style="font-size:28px;font-weight:800;color:var(--p)">${op.done}/${MODULES.length}</div>
+          <div style="font-size:13px;color:var(--muted)">modules complétés</div>
+        </div>
+        <button class="btn btn-primary btn-full" style="margin-top:14px" onclick="showScreen('home')">Reprendre la formation →</button>
+      </div>
+    </div>`;
+  } else {
+    const today = new Date().toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'});
+    body.innerHTML = `
+    <div class="cert-wrap">
+      <div class="cert">
+        <div class="cert-logo">🛡️</div>
+        <div class="cert-title">SafeDrive Academy</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Certificat de Formation</div>
+        <div class="cert-text">Ce certificat atteste que</div>
+        <div class="cert-name">Conducteur Diplômé</div>
+        <div class="cert-text" style="margin-top:6px">a complété avec succès la formation<br><strong>Conduite Défensive — Programme Complet</strong><br>comprenant ${MODULES.length} modules, études de cas et évaluations.</div>
+        <div class="cert-score">${avg}%</div>
+        <div class="cert-sub">Score moyen aux évaluations</div>
+        <div class="cert-badge">🏆 Certifié Conduite Défensive</div>
+        <div class="cert-date">Délivré le ${today}</div>
+      </div>
+      <div style="margin-top:16px">
+        <button class="btn btn-primary btn-full" onclick="showToast('Fonctionnalité disponible dans la version finale')">📤 Partager le certificat</button>
+      </div>
+    </div>`;
+  }
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────────
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ─── PWA MANIFEST ────────────────────────────────────────────────────
+(function(){
+  const manifest = {
+    name:'SafeDrive Academy', short_name:'SafeDrive',
+    description:'Formation conduite défensive interactive',
+    start_url:'./', display:'standalone',
+    background_color:'#f0f4f8', theme_color:'#1a3a5c',
+    icons:[{src:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🛡️</text></svg>',sizes:'512x512',type:'image/svg+xml'}]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('link');
+  link.rel = 'manifest'; link.href = url;
+  document.head.appendChild(link);
+})();
+
+// ─── INIT ────────────────────────────────────────────────────────────
+renderHome();
+</script>
+</body>
+</html>
